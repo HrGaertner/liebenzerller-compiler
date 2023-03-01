@@ -134,7 +134,7 @@ dmypy.json
 # Executables #
 #####################
 # Ignore all
-*
+
 
 # Unignore all with extensions
 !*.*
