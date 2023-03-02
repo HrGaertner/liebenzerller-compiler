@@ -107,7 +107,7 @@ class Print(Code):
 
 
 class If(Block):
-	  def __init__(self, exp1: Code, exp2: Code, statements: list):
+    def __init__(self, exp1: Code, exp2: Code, statements: list):
     	  self.exp1 = exp1
 		    self.exp2 = exp2
 		    super().__init__(statements)
