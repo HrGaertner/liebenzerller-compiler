@@ -10,10 +10,10 @@ class Environment:
 
 
 class Code:
-    def generateCode(self, env: set):
+    def generateCode(self, env: Environment):
         return repr(self)  # NotImplemented
 
-    def check_var_existence(self, env: set, name: str):
+    def check_var_existence(self, env: Environment, name: str):
         if not name in env.vars:
             logger.error("Variable " + name + " not defined.")
             exit(1)
@@ -23,17 +23,17 @@ class Code:
 
 
 class Block(Code):
-    def __init__(self, statements: Code):
+    def __init__(self, statements: list):
         self.statements = statements
 
-    def parseDecl(self, env: set):
+    def parseDecl(self, env: Environment):
         for s in self.statements:
             if type(s) == Decl:
                 env.vars.add(s.varname)
             elif type(s) == Block:
                 s.parseDecl(e)
 
-    def generateCode(self, env: set) -> str:
+    def generateCode(self, env: Environment) -> str:
         return "\n.text" + "".join(
             [s.generateCode(env) if type(s) != Decl else "" for s in self.statements]
         )
@@ -43,10 +43,10 @@ class Block(Code):
 
 
 class Program(Block):
-    def __init__(self, statements):
+    def __init__(self, statements: list):
         super().__init__(statements)
 
-    def generateCode(self, env: set) -> str:
+    def generateCode(self, env: Environment) -> str:
         return (
             ".data\n"
             + "\n".join([f"{v}: .word 0" for v in env.vars])
@@ -61,7 +61,7 @@ class Decl(Code):
     def __repr__(self) -> str:
         return "\nDecl(" + repr(self.varname) + ")"
 
-    def parseDecl(self, env: set):
+    def parseDecl(self, env: Environment):
         env.vars.add(self.varname)
 
 
@@ -70,8 +70,8 @@ class Assign(Code):
         self.varname = varname
         self.exp = exp
 
-    def generateCode(self, env: set) -> str:
-        super().check_var_existence()
+    def generateCode(self, env: Environment) -> str:
+        super().check_var_existence(env, self.varname)
         local_code = "\nlw $t0 ($sp)\nadd $sp, $sp, 4\nsw $t0, " + self.varname
         return local_code
 
@@ -85,7 +85,7 @@ class Input(Code):
 
     def generateCode(self, env: Code) -> str:
         # TODO instead of varname a expression (making x = 5 +input possible)
-        super().check_var_existence()
+        super().check_var_existence(env, self.varname)
         local_code = "\nli $v0, 5\nsw $v0, " + self.varname + "\nsyscall"
         return local_code
 
@@ -107,7 +107,7 @@ class Print(Code):
 
 
 class If(Block):
-    def __init__(self, exp1: Code, exp2: Code, statements: Code):
+    def __init__(self, exp1: Code, exp2: Code, statements: list):
         self.exp1 = exp1
         self.exp2 = exp2
         super().__init__(statements)
@@ -117,7 +117,7 @@ class If(Block):
 
 
 class While(Block):
-    def __init__(self, exp1: str, exp2: str, statements: Code):
+    def __init__(self, exp1: str, exp2: str, statements: list):
         self.exp1 = exp1
         self.exp2 = exp2
         super().__init__(statements)
@@ -131,9 +131,9 @@ class Sum(Code):
         self.exp1 = exp1
         self.exp2 = exp2
 
-    def generateCode(self, env: set) -> str:
+    def generateCode(self, env: Environment) -> str:
         mips_exp = self.exp1.generateCode(env)
-        mips_exp += self.exp2.geneateCode(env)
+        mips_exp += self.exp2.generateCode(env)
         local_code = (
             "\nlw $t0, ($sp)\nadd $sp 4\nlw $t1, (sp)\nadd $t2, $t1, $t0\nsw $t2, ($sp)"
         )
@@ -156,7 +156,7 @@ class Negative(Code):
     def __init__(self, exp: Code):
         self.exp = exp
 
-    def generateCode(self, env: set) -> str:
+    def generateCode(self, env: Environment) -> str:
         local_code = "\nlw $t0, ($sp)\nmul $t1, $t0, -1\nsw $t0, ($sp)"
         return local_code
 
@@ -168,8 +168,8 @@ class Var(Code):
     def __init__(self, varname: str):
         self.varname = varname
     
-    def generateCode(self, env: set) -> str:
-            super().check_var_existence()
+    def generateCode(self, env: Environment) -> str:
+            super().check_var_existence(env, self.varname)
             local_code = "lw $t0, " + self.varname + "\nadd $sp, -4\nsw $t0, ($sp)"
             return local_code
 
