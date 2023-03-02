@@ -10,30 +10,35 @@ class Environment:
 
 
 class Code:
-    def generateCode(self, env):
+    def generateCode(self, env: set):
         return repr(self)  # NotImplemented
 
-    def __repr__(self):
+    def check_var_existence(self, env: set, name: str):
+        if not name in env.vars:
+            logger.error("Variable " + name + " not defined.")
+            exit(1)
+
+    def __repr__(self) -> str:
         return "no str() available"
 
 
 class Block(Code):
-    def __init__(self, statements):
+    def __init__(self, statements: Code):
         self.statements = statements
 
-    def parseDecl(self, env):
+    def parseDecl(self, env: set):
         for s in self.statements:
             if type(s) == Decl:
                 env.vars.add(s.varname)
             elif type(s) == Block:
                 s.parseDecl(e)
 
-    def generateCode(self, env):
+    def generateCode(self, env: set) -> str:
         return "\n.text" + "".join(
             [s.generateCode(env) if type(s) != Decl else "" for s in self.statements]
         )
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return ",".join([repr(s) for s in self.statements])
 
 
@@ -41,7 +46,7 @@ class Program(Block):
     def __init__(self, statements):
         super().__init__(statements)
 
-    def generateCode(self, env):
+    def generateCode(self, env: set) -> str:
         return (
             ".data\n"
             + "\n".join([f"{v}: .word 0" for v in env.vars])
@@ -50,124 +55,125 @@ class Program(Block):
 
 
 class Decl(Code):
-    def __init__(self, varname):
+    def __init__(self, varname: str):
         self.varname = varname
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return "\nDecl(" + repr(self.varname) + ")"
 
-    def parseDecl(self, env):
+    def parseDecl(self, env: set):
         env.vars.add(self.varname)
 
 
 class Assign(Code):
-    def __init__(self, varname, exp):
+    def __init__(self, varname: str, exp: Code):
         self.varname = varname
         self.exp = exp
 
-    def generateCode(self, env):
-        if self.varname in env.vars:
-            local_code = "\nlw $t0 ($sp)\nadd $sp, $sp, 4\nsw $t0, " + self.varname
-            return local_code
+    def generateCode(self, env: set) -> str:
+        super().check_var_existence()
+        local_code = "\nlw $t0 ($sp)\nadd $sp, $sp, 4\nsw $t0, " + self.varname
+        return local_code
 
-        else:
-            logger.error("Variable " + self.varname + " not defined.")
-            exit(1)
-
-    def __repr__(self):
+    def __repr__(self) -> str:
         return "\n" + repr(self.exp) + " -> " + repr(self.varname) + ")"
 
 
 class Input(Code):
-    def __init__(self, varname):
+    def __init__(self, varname: str):
         self.varname = varname
 
-    def generateCode(self, env):
+    def generateCode(self, env: Code) -> str:
         # TODO instead of varname a expression (making x = 5 +input possible)
-        if self.varname in env.vars:
-            local_code = "\nli $v0, 5\nsw $v0, " + self.varname + "\nsyscall"
-            return local_code
+        super().check_var_existence()
+        local_code = "\nli $v0, 5\nsw $v0, " + self.varname + "\nsyscall"
+        return local_code
 
-        else:
-            logger.error("Variable " + self.varname + " not defined.")
-            exit(1)
-
-    def __repr__(self):
+    def __repr__(self) -> str:
         return "\nInput -> " + repr(self.varname)
 
 
 class Print(Code):
-    def __init__(self, exp):
+    def __init__(self, exp: Code):
         self.exp = exp
 
-    def generateCode(self, env):
+    def generateCode(self, env: Code) -> str:
         mips_exp = self.exp.generateCode(env)
         local_code = "\nli $v0, 1\nlw $a0, ($sp)\nsyscall\nadd $sp, 4"
         return mips_exp + local_code
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return "\nPrint(" + repr(self.exp) + ")"
 
 
 class If(Block):
-    def __init__(self, exp1, exp2, statements):
+    def __init__(self, exp1: Code, exp2: Code, statements: Code):
         self.exp1 = exp1
         self.exp2 = exp2
         super().__init__(statements)
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return f"\nIf({self.exp1}, {self.exp2}) (" + super().__repr__() + "\n)"
 
 
 class While(Block):
-    def __init__(self, exp1, exp2, statements):
+    def __init__(self, exp1: str, exp2: str, statements: Code):
         self.exp1 = exp1
         self.exp2 = exp2
         super().__init__(statements)
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return f"\nWhile({self.exp1}, {self.exp2}) (" + super().__repr__() + "\n)"
 
 
 class Sum(Code):
-    def __init__(self, exp1, exp2):
+    def __init__(self, exp1: Code, exp2: Code):
         self.exp1 = exp1
         self.exp2 = exp2
 
-    def generateCode(self, env):
+    def generateCode(self, env: set) -> str:
         mips_exp = self.exp1.generateCode(env)
         mips_exp += self.exp2.geneateCode(env)
         local_code = (
-            "lw $t0, ($sp)\nadd $sp 4\nlw $t1, (sp)\nadd $t2, $t1, $t0\nsw $t2, ($sp)"
+            "\nlw $t0, ($sp)\nadd $sp 4\nlw $t1, (sp)\nadd $t2, $t1, $t0\nsw $t2, ($sp)"
         )
         return mips_exp + local_code
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return repr(self.exp1) + " + " + repr(self.exp2)
 
 
 class Product(Code):
-    def __init__(self, exp1, exp2):
+    def __init__(self, exp1: Code, exp2: Code):
         self.exp1 = exp1
         self.exp2 = exp2
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return repr(self.exp1) + " * " + repr(self.exp2)
 
 
 class Negative(Code):
-    def __init__(self, exp):
+    def __init__(self, exp: Code):
         self.exp = exp
 
-    def __repr__(self):
+    def generateCode(self, env: set) -> str:
+        local_code = "\nlw $t0, ($sp)\nmul $t1, $t0, -1\nsw $t0, ($sp)"
+        return local_code
+
+    def __repr__(self) -> str:
         return "-" + repr(self.exp)
 
 
 class Var(Code):
-    def __init__(self, varname):
+    def __init__(self, varname: str):
         self.varname = varname
+    
+    def generateCode(self, env: set) -> str:
+            super().check_var_existence()
+            local_code = "lw $t0, " + self.varname + "\nadd $sp, -4\nsw $t0, ($sp)"
+            return local_code
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return self.varname
 
 
@@ -176,7 +182,7 @@ class Num(Code):
         self.number = number
 
     def generateCode(self, env):
-        local_code = "li $t0, " + self.number + "\nadd $sp -4\nsw $t0 ($sp)"
+        local_code = "li $t0, " + str(self.number) + "\nadd $sp -4\nsw $t0 ($sp)"
         return
 
     def __repr__(self):
