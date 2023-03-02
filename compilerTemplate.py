@@ -44,6 +44,14 @@ class Input(Code):
 	def __init__(self, varname):
 		self.varname = varname
 	
+	def generateCode(self, env):
+		if self.varname in env.vars:  # TODO instead of varname a expression (making x = 5 +input possible)
+			local_code = """
+			li $v0, 5
+			add $sp -4
+			sw $v0 """+self.varname
+			return local_code
+
 	def __repr__(self):
 		return "Input -> " + repr(self.varname)
 
