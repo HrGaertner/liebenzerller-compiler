@@ -1,6 +1,6 @@
 class Environment():
 	def __init__(self):
-		self.vars = []
+		self.vars = set()
 
 
 class Code():
@@ -9,57 +9,69 @@ class Code():
 	def __repr__(self):
 		return "no str() available"
 
-class Program(Code):
+class Block(Code):
 	def __init__(self, statements):
 		self.statements = statements
+	def parseDecl(self, env):
+		for s in self.statements:
+			if type(s) == Decl:
+				env.vars.add(s.varname)
+			elif type(s) == Block:
+				s.parseDecl(e)
+	def __repr__(self):
+		return ",".join([repr(s) if type(s) != Decl else "" for s in self.statements])
+
+class Program(Block):
+	def __init__(self, statements):
+		super().__init__(statements)
 	def generateCode(self, env):
 		return ".data\n" + "\n".join([f"{v}: .word 0"for v in env.vars]) + \
-		"\n.text\n" + "\n".join([s.generateCode(env) for s in self.statements])
+		"\n.text" + "".join([s.generateCode(env) for s in self.statements])
 	def __repr__(self):
-		return "Program(\n"+",\n".join([repr(s) for s in self.statements]) + "\n)"
+		return "\nProgram("+ super().__repr__() + "\n)"
 
 class Decl(Code):
 	def __init__(self, varname):
 		self.varname = varname
 	def __repr__(self):
-		return "Decl("+repr(self.varname)+")"
+		return "\nDecl("+repr(self.varname)+")"
+	def parseDecl(self, env):
+		env.vars.add(self.varname)
 
 class Assign(Code):
 	def __init__(self, varname, exp):
 		self.varname = varname
 		self.exp = exp
 	def __repr__(self):
-		return repr(self.exp)+" -> "+repr(self.varname)+")"
+		return "\n" + repr(self.exp)+" -> "+ repr(self.varname)+")"
 
 class Input(Code):
 	def __init__(self, varname):
 		self.varname = varname
 	def __repr__(self):
-		return "Input -> " + repr(self.varname)
+		return "\nInput -> " + repr(self.varname)
 
 class Print(Code):
 	def __init__(self, exp):
 		self.exp = exp
 	def __repr__(self):
-		return "Print("+repr(self.exp)+")"
+		return "\nPrint("+repr(self.exp)+")"
 
-class If(Code):
+class If(Block):
 	def __init__(self, exp1, exp2, statements):
 		self.exp1 = exp1
 		self.exp2 = exp2
-		self.statements = statements
+		super().__init__(statements)
 	def __repr__(self):
-		return f"If({self.exp1}, {self.exp2}) (\n" + \
-		"\n".join([repr(s) for s in self.statements]) + "\n)"
+		return f"\nIf({self.exp1}, {self.exp2}) (" + super().__repr__() + "\n)"
 
-class While(Code):
+class While(Block):
 	def __init__(self, exp1, exp2, statements):
 		self.exp1 = exp1
 		self.exp2 = exp2
-		self.statements = statements
+		super().__init__(statements)
 	def __repr__(self):
-		return f"While({self.exp1}, {self.exp2}) (\n" + \
-		"\n".join([repr(s) for s in self.statements]) + "\n)"
+		return f"\nWhile({self.exp1}, {self.exp2}) (" + super().__repr__() + "\n)"
 
 class Sum(Code):
 	def __init__(self, exp1, exp2):
@@ -115,9 +127,5 @@ ast = Program([
 
 print(ast)
 e = Environment()
-e.vars.append("test1")
-e.vars.append("test2")
-e.vars.append("test3")
-e.vars.append("Du")
-e.vars.append("Bad")
+ast.parseDecl(e)
 print(ast.generateCode(e))
