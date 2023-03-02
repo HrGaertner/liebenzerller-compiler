@@ -83,7 +83,7 @@ class Input(Code):
     def __init__(self, varname: str):
         self.varname = varname
 
-    def generateCode(self, env: Code) -> str:
+    def generateCode(self, env: Environment) -> str:
         # TODO instead of varname a expression (making x = 5 +input possible)
         super().check_var_existence(env, self.varname)
         local_code = "\nli $v0, 5\nsw $v0, " + self.varname + "\nsyscall"
@@ -97,7 +97,7 @@ class Print(Code):
     def __init__(self, exp: Code):
         self.exp = exp
 
-    def generateCode(self, env: Code) -> str:
+    def generateCode(self, env: Environment) -> str:
         mips_exp = self.exp.generateCode(env)
         local_code = "\nli $v0, 1\nlw $a0, ($sp)\nsyscall\nadd $sp, 4"
         return mips_exp + local_code
@@ -117,7 +117,7 @@ class If(Block):
 
 
 class While(Block):
-    def __init__(self, exp1: str, exp2: str, statements: list):
+    def __init__(self, exp1: Code, exp2: Code, statements: list):
         self.exp1 = exp1
         self.exp2 = exp2
         super().__init__(statements)
