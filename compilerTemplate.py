@@ -7,8 +7,8 @@ logger = logging.getLogger(__name__)
 class Environment():
     def __init__(self):
         self.vars = set()
-	self.while_count = 0
-	self.if_count = 0
+        self.while_count = 0
+        self.if_count = 0
     
 
 class Code:
