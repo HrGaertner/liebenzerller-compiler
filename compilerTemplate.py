@@ -46,7 +46,7 @@ class Program(Block):
     def __init__(self, statements: list):
         super().__init__(statements)
 
-	def generateCode(self, env: Environment) -> str:
+    def generateCode(self, env: Environment) -> str:
         return (
             ".data\n"
             + "\n".join([f"{v}: .word 0" for v in env.vars])
