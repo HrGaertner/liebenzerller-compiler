@@ -109,16 +109,16 @@ class Print(Code):
 class If(Block):
     def __init__(self, exp1: Code, exp2: Code, statements: list):
         self.exp1 = exp1
-	self.exp2 = exp2
-	super().__init__(statements)
+        self.exp2 = exp2
+        super().__init__(statements)
     
     def generateCode(self, env: Environment) -> str:
         label = "if" + str(env.if_count)
-	env.if_count += 1
-	start_code = "\n" + self.exp1.generateCode(env) + self.exp2.generateCode(env) + \
+        env.if_count += 1
+        start_code = "\n" + self.exp1.generateCode(env) + self.exp2.generateCode(env) + \
 		"\nlw $t0 ($sp)\nlw $t1 4($sp)\nadd $sp, $sp, 8\nbgt $t0, $t1, " + label + "\n"
-	end_code = "\n" + label + ":"
-	return start_code + self.generateBlockCode(env) + end_code
+        end_code = "\n" + label + ":"
+        return start_code + self.generateBlockCode(env) + end_code
 
     def __repr__(self) -> str:
         return f"\nIf({self.exp1}, {self.exp2}) (" + super().__repr__() + "\n)"
