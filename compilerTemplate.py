@@ -9,10 +9,11 @@ class Environment():
         self.vars = set()
         self.while_count = 0
         self.if_count = 0
-    
+
 
 class Code:
     def generateCode(self, env: Environment):
+        print(self)
         return NotImplemented
 
     def check_var_existence(self, env: Environment, name: str):
@@ -50,7 +51,7 @@ class Program(Block):
         return (
             ".data\n"
             + "\n".join([f"{v}: .word 0" for v in env.vars])
-            + super().generateCode(env)
+            + "\n.text\n" + self.generateBlockCode(env)
         )
 
 
@@ -111,7 +112,7 @@ class If(Block):
         self.exp1 = exp1
         self.exp2 = exp2
         super().__init__(statements)
-    
+
     def generateCode(self, env: Environment) -> str:
         label = "if" + str(env.if_count)
         env.if_count += 1
@@ -123,13 +124,13 @@ class If(Block):
     def __repr__(self) -> str:
         return f"\nIf({self.exp1}, {self.exp2}) (" + super().__repr__() + "\n)"
 
-  
+
 class While(Block):
     def __init__(self, exp1: Code, exp2: Code, statements: list):
         self.exp1 = exp1
         self.exp2 = exp2
         super().__init__(statements)
-    
+
     def generateCode(self, env: Environment) -> str:
         label = "while" + str(env.while_count)
         env.while_count += 1
@@ -163,16 +164,16 @@ class Product(Code):
     def __init__(self, exp1: Code, exp2: Code):
         self.exp1 = exp1
         self.exp2 = exp2
-	
+
     def generateCode(self, env: Environment) -> str:
         mips_exp = self.exp1.generateCode(env)
-        mips_exp += self.exp2.generateCode(env) 
+        mips_exp += self.exp2.generateCode(env)
         local_code = "lw $t0, ($sp)\nmul $sp 4\nlw $t1, (sp)\nadd $t2, $t1, $t0\nsw $t2, ($sp)"
         return mips_exp + local_code
-	
+
     def __repr__(self) -> str:
         return repr(self.exp1) + " * " + repr(self.exp2)
-        
+
 
 class Negative(Code):
     def __init__(self, exp: Code):
@@ -189,7 +190,7 @@ class Negative(Code):
 class Var(Code):
     def __init__(self, varname: str):
         self.varname = varname
-    
+
     def generateCode(self, env: Environment) -> str:
         super().check_var_existence(env, self.varname)
         local_code = "lw $t0, " + self.varname + "\nadd $sp, -4\nsw $t0, ($sp)"
@@ -232,7 +233,6 @@ ast = Program(
     ]
 )
 
-print(ast)
 e = Environment()
 ast.parseDecl(e)
 print(ast.generateCode(e))
