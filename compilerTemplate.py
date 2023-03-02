@@ -1,16 +1,22 @@
+class Environment():
+	def __init__(self):
+		self.vars = []
 
 
 class Code():
 	def generateCode(self, env):
-		return NotImplemented
+		return repr(self) # NotImplemented
 	def __repr__(self):
 		return "no str() available"
 
 class Program(Code):
 	def __init__(self, statements):
 		self.statements = statements
+	def generateCode(self, env):
+		return ".data\n" + "\n".join([f"{v}: .word 0"for v in env.vars]) + \
+		"\n.text\n" + "\n".join([s.generateCode(env) for s in self.statements])
 	def __repr__(self):
-		return "Program(\n"+",\n".join([repr(s) for s in self.statements]) + ")"
+		return "Program(\n"+",\n".join([repr(s) for s in self.statements]) + "\n)"
 
 class Decl(Code):
 	def __init__(self, varname):
@@ -44,7 +50,7 @@ class If(Code):
 		self.statements = statements
 	def __repr__(self):
 		return f"If({self.exp1}, {self.exp2}) (\n" + \
-		"\n".join([repr(s) for s in self.statements]) + ")"
+		"\n".join([repr(s) for s in self.statements]) + "\n)"
 
 class While(Code):
 	def __init__(self, exp1, exp2, statements):
@@ -53,7 +59,7 @@ class While(Code):
 		self.statements = statements
 	def __repr__(self):
 		return f"While({self.exp1}, {self.exp2}) (\n" + \
-		"\n".join([repr(s) for s in self.statements].join("\n") + ")"
+		"\n".join([repr(s) for s in self.statements]) + "\n)"
 
 class Sum(Code):
 	def __init__(self, exp1, exp2):
@@ -108,7 +114,10 @@ ast = Program([
 ])
 
 print(ast)
-
-
-
-
+e = Environment()
+e.vars.append("test1")
+e.vars.append("test2")
+e.vars.append("test3")
+e.vars.append("Du")
+e.vars.append("Bad")
+print(ast.generateCode(e))
