@@ -51,7 +51,7 @@ class Program(Block):
         return (
             ".data\n"
             + "\n".join([f"{v}: .word 0" for v in env.vars])
-            + "\n.text\n" + self.generateBlockCode(env)
+            + "\n.text" + self.generateBlockCode(env)
         )
 
 
