@@ -1,3 +1,4 @@
+# TODO: Note variables in the LSN may not start with $ (check)
 import logging
 logger = logging.getLogger(__name__)
 
@@ -62,7 +63,7 @@ class Input(Code):
 	
 	def generateCode(self, env):
 		if self.varname in env.vars:  # TODO instead of varname a expression (making x = 5 +input possible)
-			local_code = "\nli $v0, 5\nadd $sp -4\nsw $v0"+self.varname
+			local_code = "\nli $v0, 5\nsw $v0, "+self.varname+"\nsyscall"
 			return local_code
 
 		else:
@@ -78,12 +79,8 @@ class Print(Code):
 		self.exp = exp
 	
 	def generateCode(self, env):
-		mips_exp =  self.exp.generateCode(env)
-		local_code = """
-		li  $v0, 1
-		lw $a0 ($sp)
-		syscall
-		add $sp 4"""
+		mips_exp = self.exp.generateCode(env)
+		local_code = "\nli $v0, 1\nlw $a0, ($sp)\nsyscall\nadd $sp, 4"
 		return mips_exp + local_code
 	
 	def __repr__(self):
@@ -115,6 +112,12 @@ class Sum(Code):
 		self.exp1 = exp1
 		self.exp2 = exp2
 	
+	def generateCode(self, env):
+		mips_exp = self.exp1.generateCode(env)
+		mips_exp += self.exp2.geneateCode(env) 
+		local_code = "lw $t0, ($sp)\nadd $sp 4\nlw $t1, (sp)\nadd $t2, $t1, $t0\nsw $t2, ($sp)"
+		return mips_exp + local_code
+
 	def __repr__(self):
 		return repr(self.exp1) + " + " + repr(self.exp2)
 
@@ -149,7 +152,7 @@ class Num(Code):
 		self.number = number
 	
 	def generateCode(self, env):
-		local_code = "li $t0 " + self.number + "\nadd $sp -4\nsw $t0 ($sp)"
+		local_code = "li $t0, " + self.number + "\nadd $sp -4\nsw $t0 ($sp)"
 		return 
 
 	def __repr__(self):
