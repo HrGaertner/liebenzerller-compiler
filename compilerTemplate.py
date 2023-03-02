@@ -166,9 +166,9 @@ class Product(Code):
 	
     def generateCode(self, env: Environment) -> str:
         mips_exp = self.exp1.generateCode(env)
-	mips_exp += self.exp2.geneateCode(env) 
-	local_code = "lw $t0, ($sp)\nmul $sp 4\nlw $t1, (sp)\nadd $t2, $t1, $t0\nsw $t2, ($sp)"
-	return mips_exp + local_code
+        mips_exp += self.exp2.geneateCode(env) 
+        local_code = "lw $t0, ($sp)\nmul $sp 4\nlw $t1, (sp)\nadd $t2, $t1, $t0\nsw $t2, ($sp)"
+        return mips_exp + local_code
 	
     def __repr__(self) -> str:
         return repr(self.exp1) + " * " + repr(self.exp2)
