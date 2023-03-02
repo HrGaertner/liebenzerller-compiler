@@ -24,8 +24,12 @@ class Block(Code):
 				env.vars.add(s.varname)
 			elif type(s) == Block:
 				s.parseDecl(e)
+
+	def generateCode(self, env):
+		return "\n.text" + "".join([s.generateCode(env) if type(s)!= Decl else "" for s in self.statements])
+			
 	def __repr__(self):
-		return ",".join([repr(s) if type(s) != Decl else "" for s in self.statements])
+		return ",".join([repr(s) for s in self.statements])
 
   
 class Program(Block):
@@ -33,8 +37,7 @@ class Program(Block):
 		super().__init__(statements)
 	
 	def generateCode(self, env):
-		return ".data\n" + "\n".join([f"{v}: .word 0"for v in env.vars]) + \
-		"\n.text" + "".join([s.generateCode(env) for s in self.statements])
+		return ".data\n" + "\n".join([f"{v}: .word 0"for v in env.vars]) + super().generateCode(env)
   
   
 class Decl(Code):
@@ -52,6 +55,15 @@ class Assign(Code):
 		self.varname = varname
 		self.exp = exp
 	
+	def generateCode(self, env):
+		if self.varname in env.vars:
+			local_code = "\nlw $t0 ($sp)\nadd $sp, $sp, 4\nsw $t0, "+self.varname
+			return local_code
+
+		else:
+			logger.error("Variable " + self.varname + " not defined.")
+			exit(1)
+
 	def __repr__(self):
 		return "\n" + repr(self.exp)+" -> "+ repr(self.varname)+")"
 
