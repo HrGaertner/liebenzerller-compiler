@@ -87,7 +87,7 @@ class Input(Code):
     def generateCode(self, env: Environment) -> str:
         # TODO instead of varname a expression (making x = 5 +input possible)
         super().check_var_existence(env, self.varname)
-        local_code = "\nli $v0, 5\nsw $v0, " + self.varname + "\nsyscall"
+        local_code = "\nli $v0, 5\nsyscall\nsw $v0, " + self.varname
         return local_code
 
     def __repr__(self) -> str:
@@ -100,7 +100,7 @@ class Print(Code):
 
     def generateCode(self, env: Environment) -> str:
         mips_exp = self.exp.generateCode(env)
-        local_code = "\nli $v0, 1\nlw $a0, ($sp)\nsyscall\nadd $sp, 4"
+        local_code = "\nli $v0, 1\nlw $a0, ($sp)\nsyscall\nadd $sp, $sp, 4"
         return mips_exp + local_code
 
     def __repr__(self) -> str:
@@ -152,7 +152,7 @@ class Sum(Code):
         mips_exp = self.exp1.generateCode(env)
         mips_exp += self.exp2.generateCode(env)
         local_code = (
-            "\nlw $t0, ($sp)\nadd $sp 4\nlw $t1, (sp)\nadd $t2, $t1, $t0\nsw $t2, ($sp)"
+            "\nlw $t0, ($sp)\nadd $sp, $sp, 4\nlw $t1, ($sp)\nadd $t2, $t1, $t0\nsw $t2, ($sp)"
         )
         return mips_exp + local_code
 
@@ -192,9 +192,9 @@ class Var(Code):
         self.varname = varname
 
     def generateCode(self, env: Environment) -> str:
-        super().check_var_existence(env, self.varname)
-        local_code = "lw $t0, " + self.varname + "\nadd $sp, -4\nsw $t0, ($sp)"
-        return local_code
+          super().check_var_existence(env, self.varname)
+          local_code = "lw $t0, " + self.varname + "\nadd $sp, $sp, -4\nsw $t0, ($sp)"
+          return local_code
 
     def __repr__(self) -> str:
         return self.varname
@@ -204,9 +204,9 @@ class Num(Code):
     def __init__(self, number: int):
         self.number = number
 
-    def generateCode(self, env: Environment) -> str:
-        local_code = "li $t0, " + str(self.number) + "\nadd $sp -4\nsw $t0 ($sp)"
-        return local_code
+    def generateCode(self, env):
+        local_code = "li $t0, " + str(self.number) + "\nadd $sp, $sp -4\nsw $t0 ($sp)"
+        return
 
     def __repr__(self) -> str:
         return repr(self.number)
