@@ -1,2 +1,10 @@
-- name: Python Linter
-  uses: sunnysid3up/python-linter@v0.1-beta.7
+name : validate
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  lint_python:
+    name: Python Linter
+    uses: sunnysid3up/python-linter@v0.1-beta.7
