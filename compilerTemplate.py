@@ -49,10 +49,7 @@ class Input(Code):
 	
 	def generateCode(self, env):
 		if self.varname in env.vars:  # TODO instead of varname a expression (making x = 5 +input possible)
-			local_code = """
-			li $v0, 5
-			add $sp -4
-			sw $v0 """+self.varname
+			local_code = "\nli $v0, 5\nadd $sp -4\nsw $v0"+self.varname
 			return local_code
 
 		else:
@@ -141,11 +138,7 @@ class Num(Code):
 		self.number = number
 	
 	def generateCode(self, env):
-		local_code = """
-		li $t0 """ + self.number + """
-		add $sp -4
-		sw $t0 ($sp)
-		"""
+		local_code = "li $t0 " + self.number + "\nadd $sp -4\nsw $t0 ($sp)"
 		return 
 
 	def __repr__(self):
