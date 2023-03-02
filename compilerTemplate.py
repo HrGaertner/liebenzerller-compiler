@@ -1,3 +1,6 @@
+import logging
+logger = logging.getLogger(__name__)
+
 class Environment():
 	def __init__(self):
 		self.vars = []
@@ -52,6 +55,10 @@ class Input(Code):
 			sw $v0 """+self.varname
 			return local_code
 
+		else:
+			logger.error("Variable " + self.varname + " not defined.")
+			exit(1)
+	
 	def __repr__(self):
 		return "Input -> " + repr(self.varname)
 
