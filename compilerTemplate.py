@@ -5,10 +5,10 @@ logger = logging.getLogger(__name__)
 
 
 class Environment():
-	def __init__(self):
-		self.vars = set()
-		self.while_count = 0
-		self.if_count = 0
+    def __init__(self):
+        self.vars = set()
+	self.while_count = 0
+	self.if_count = 0
     
 
 class Code:
@@ -35,8 +35,8 @@ class Block(Code):
             elif type(s) == Block:
                 s.parseDecl(e)
 
-    def generateCode(self, env: Environment) -> str:
-		    return "".join([s.generateCode(env) if type(s)!= Decl else "" for s in self.statements])
+    def generateBlockCode(self, env: Environment) -> str:
+        return "".join([s.generateCode(env) if type(s)!= Decl else "" for s in self.statements])
 
     def __repr__(self) -> str:
         return ",".join([repr(s) for s in self.statements])
@@ -166,7 +166,7 @@ class Product(Code):
 	
     def generateCode(self, env: Environment) -> str:
         mips_exp = self.exp1.generateCode(env)
-        mips_exp += self.exp2.geneateCode(env) 
+        mips_exp += self.exp2.generateCode(env) 
         local_code = "lw $t0, ($sp)\nmul $sp 4\nlw $t1, (sp)\nadd $t2, $t1, $t0\nsw $t2, ($sp)"
         return mips_exp + local_code
 	
