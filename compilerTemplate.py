@@ -1,194 +1,208 @@
 # TODO: Note variables in the LSN may not start with $ (check)
 import logging
+
 logger = logging.getLogger(__name__)
 
-class Environment():
-	def __init__(self):
-		self.vars = set()
+
+class Environment:
+    def __init__(self):
+        self.vars = set()
 
 
-class Code():
-	def generateCode(self, env):
-		return repr(self) # NotImplemented
-	
-	def __repr__(self):
-		return "no str() available"
+class Code:
+    def generateCode(self, env):
+        return repr(self)  # NotImplemented
 
-  
+    def __repr__(self):
+        return "no str() available"
+
+
 class Block(Code):
-	def __init__(self, statements):
-		self.statements = statements
-    
-	def parseDecl(self, env):
-		for s in self.statements:
-			if type(s) == Decl:
-				env.vars.add(s.varname)
-			elif type(s) == Block:
-				s.parseDecl(e)
+    def __init__(self, statements):
+        self.statements = statements
 
-	def generateCode(self, env):
-		return "\n.text" + "".join([s.generateCode(env) if type(s)!= Decl else "" for s in self.statements])
-			
-	def __repr__(self):
-		return ",".join([repr(s) for s in self.statements])
+    def parseDecl(self, env):
+        for s in self.statements:
+            if type(s) == Decl:
+                env.vars.add(s.varname)
+            elif type(s) == Block:
+                s.parseDecl(e)
 
-  
+    def generateCode(self, env):
+        return "\n.text" + "".join(
+            [s.generateCode(env) if type(s) != Decl else "" for s in self.statements]
+        )
+
+    def __repr__(self):
+        return ",".join([repr(s) for s in self.statements])
+
+
 class Program(Block):
-	def __init__(self, statements):
-		super().__init__(statements)
-	
-	def generateCode(self, env):
-		return ".data\n" + "\n".join([f"{v}: .word 0"for v in env.vars]) + super().generateCode(env)
-  
-  
+    def __init__(self, statements):
+        super().__init__(statements)
+
+    def generateCode(self, env):
+        return (
+            ".data\n"
+            + "\n".join([f"{v}: .word 0" for v in env.vars])
+            + super().generateCode(env)
+        )
+
+
 class Decl(Code):
-	def __init__(self, varname):
-		self.varname = varname
-	
-	def __repr__(self):
-		return "\nDecl("+repr(self.varname)+")"
-	def parseDecl(self, env):
-		env.vars.add(self.varname)
+    def __init__(self, varname):
+        self.varname = varname
+
+    def __repr__(self):
+        return "\nDecl(" + repr(self.varname) + ")"
+
+    def parseDecl(self, env):
+        env.vars.add(self.varname)
 
 
 class Assign(Code):
-	def __init__(self, varname, exp):
-		self.varname = varname
-		self.exp = exp
-	
-	def generateCode(self, env):
-		if self.varname in env.vars:
-			local_code = "\nlw $t0 ($sp)\nadd $sp, $sp, 4\nsw $t0, "+self.varname
-			return local_code
+    def __init__(self, varname, exp):
+        self.varname = varname
+        self.exp = exp
 
-		else:
-			logger.error("Variable " + self.varname + " not defined.")
-			exit(1)
+    def generateCode(self, env):
+        if self.varname in env.vars:
+            local_code = "\nlw $t0 ($sp)\nadd $sp, $sp, 4\nsw $t0, " + self.varname
+            return local_code
 
-	def __repr__(self):
-		return "\n" + repr(self.exp)+" -> "+ repr(self.varname)+")"
+        else:
+            logger.error("Variable " + self.varname + " not defined.")
+            exit(1)
+
+    def __repr__(self):
+        return "\n" + repr(self.exp) + " -> " + repr(self.varname) + ")"
 
 
 class Input(Code):
-	def __init__(self, varname):
-		self.varname = varname
-	
-	def generateCode(self, env):
-		if self.varname in env.vars:  # TODO instead of varname a expression (making x = 5 +input possible)
-			local_code = "\nli $v0, 5\nsw $v0, "+self.varname+"\nsyscall"
-			return local_code
+    def __init__(self, varname):
+        self.varname = varname
 
-		else:
-			logger.error("Variable " + self.varname + " not defined.")
-			exit(1)
-	
-	def __repr__(self):
-		return "\nInput -> " + repr(self.varname)
+    def generateCode(self, env):
+        # TODO instead of varname a expression (making x = 5 +input possible)
+        if self.varname in env.vars:
+            local_code = "\nli $v0, 5\nsw $v0, " + self.varname + "\nsyscall"
+            return local_code
+
+        else:
+            logger.error("Variable " + self.varname + " not defined.")
+            exit(1)
+
+    def __repr__(self):
+        return "\nInput -> " + repr(self.varname)
 
 
 class Print(Code):
-	def __init__(self, exp):
-		self.exp = exp
-	
-	def generateCode(self, env):
-		mips_exp = self.exp.generateCode(env)
-		local_code = "\nli $v0, 1\nlw $a0, ($sp)\nsyscall\nadd $sp, 4"
-		return mips_exp + local_code
-	
-	def __repr__(self):
-		return "\nPrint("+repr(self.exp)+")"
+    def __init__(self, exp):
+        self.exp = exp
 
-  
+    def generateCode(self, env):
+        mips_exp = self.exp.generateCode(env)
+        local_code = "\nli $v0, 1\nlw $a0, ($sp)\nsyscall\nadd $sp, 4"
+        return mips_exp + local_code
+
+    def __repr__(self):
+        return "\nPrint(" + repr(self.exp) + ")"
+
+
 class If(Block):
-	def __init__(self, exp1, exp2, statements):
-		self.exp1 = exp1
-		self.exp2 = exp2
-		super().__init__(statements)
-    
-	def __repr__(self):
-		return f"\nIf({self.exp1}, {self.exp2}) (" + super().__repr__() + "\n)"
+    def __init__(self, exp1, exp2, statements):
+        self.exp1 = exp1
+        self.exp2 = exp2
+        super().__init__(statements)
 
-  
+    def __repr__(self):
+        return f"\nIf({self.exp1}, {self.exp2}) (" + super().__repr__() + "\n)"
+
+
 class While(Block):
-	def __init__(self, exp1, exp2, statements):
-		self.exp1 = exp1
-		self.exp2 = exp2
-		super().__init__(statements)
-    
-	def __repr__(self):
-		return f"\nWhile({self.exp1}, {self.exp2}) (" + super().__repr__() + "\n)"
+    def __init__(self, exp1, exp2, statements):
+        self.exp1 = exp1
+        self.exp2 = exp2
+        super().__init__(statements)
+
+    def __repr__(self):
+        return f"\nWhile({self.exp1}, {self.exp2}) (" + super().__repr__() + "\n)"
 
 
 class Sum(Code):
-	def __init__(self, exp1, exp2):
-		self.exp1 = exp1
-		self.exp2 = exp2
-	
-	def generateCode(self, env):
-		mips_exp = self.exp1.generateCode(env)
-		mips_exp += self.exp2.geneateCode(env) 
-		local_code = "lw $t0, ($sp)\nadd $sp 4\nlw $t1, (sp)\nadd $t2, $t1, $t0\nsw $t2, ($sp)"
-		return mips_exp + local_code
+    def __init__(self, exp1, exp2):
+        self.exp1 = exp1
+        self.exp2 = exp2
 
-	def __repr__(self):
-		return repr(self.exp1) + " + " + repr(self.exp2)
+    def generateCode(self, env):
+        mips_exp = self.exp1.generateCode(env)
+        mips_exp += self.exp2.geneateCode(env)
+        local_code = (
+            "lw $t0, ($sp)\nadd $sp 4\nlw $t1, (sp)\nadd $t2, $t1, $t0\nsw $t2, ($sp)"
+        )
+        return mips_exp + local_code
+
+    def __repr__(self):
+        return repr(self.exp1) + " + " + repr(self.exp2)
 
 
 class Product(Code):
-	def __init__(self, exp1, exp2):
-		self.exp1 = exp1
-		self.exp2 = exp2
-	
-	def __repr__(self):
-		return repr(self.exp1) + " * " + repr(self.exp2)
+    def __init__(self, exp1, exp2):
+        self.exp1 = exp1
+        self.exp2 = exp2
+
+    def __repr__(self):
+        return repr(self.exp1) + " * " + repr(self.exp2)
 
 
 class Negative(Code):
-	def __init__(self, exp):
-		self.exp = exp
-	
-	def __repr__(self):
-		return "-" + repr(self.exp)
+    def __init__(self, exp):
+        self.exp = exp
+
+    def __repr__(self):
+        return "-" + repr(self.exp)
 
 
 class Var(Code):
-	def __init__(self, varname):
-		self.varname = varname
-	
-	def __repr__(self):
-		return self.varname
+    def __init__(self, varname):
+        self.varname = varname
+
+    def __repr__(self):
+        return self.varname
 
 
 class Num(Code):
-	def __init__(self, number):
-		self.number = number
-	
-	def generateCode(self, env):
-		local_code = "li $t0, " + self.number + "\nadd $sp -4\nsw $t0 ($sp)"
-		return 
+    def __init__(self, number):
+        self.number = number
 
-	def __repr__(self):
-		return repr(self.number)
+    def generateCode(self, env):
+        local_code = "li $t0, " + self.number + "\nadd $sp -4\nsw $t0 ($sp)"
+        return
+
+    def __repr__(self):
+        return repr(self.number)
 
 
 # Beispielprogramm
-ast = Program([
-	Decl("x"),
-	Decl("y"),
-	Decl("z"),
-	Assign("x", Sum(Product(Num(1),Num(2)),Num(3))),
-	Input("y"),
-	While(Num(0), Var("x"), [
-		Assign("x", Sum(Var("x"), Negative(Num(1)))),
-		Assign("z", Sum(Var("z"), Var("y")))
-	]),
-	If(Var("z"), Num(1), [
-		Print(Num(0))
-	]),
-	If(Num(0), Var("z"), [
-		Print(Var("z"))
-	])
-])
+ast = Program(
+    [
+        Decl("x"),
+        Decl("y"),
+        Decl("z"),
+        Assign("x", Sum(Product(Num(1), Num(2)), Num(3))),
+        Input("y"),
+        While(
+            Num(0),
+            Var("x"),
+            [
+                Assign("x", Sum(Var("x"), Negative(Num(1)))),
+                Assign("z", Sum(Var("z"), Var("y"))),
+            ],
+        ),
+        If(Var("z"), Num(1), [Print(Num(0))]),
+        If(Num(0), Var("z"), [Print(Var("z"))]),
+    ]
+)
 
 print(ast)
 e = Environment()
