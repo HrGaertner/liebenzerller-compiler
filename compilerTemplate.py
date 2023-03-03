@@ -1,5 +1,6 @@
 # TODO: Note variables in the LSN may not start with $ (check)
 import logging
+import sys
 
 logger = logging.getLogger(__name__)
 
@@ -235,4 +236,6 @@ ast = Program(
 
 e = Environment()
 ast.parseDecl(e)
-print(ast.generateCode(e))
+
+with open(sys.argv[1], "w") as file:
+    file.write(ast.generateCode(e))
