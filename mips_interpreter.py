@@ -4,21 +4,20 @@ from sys import argv
 def load_program(program) -> tuple[list[str], dict[str, int]]:
     data: list[str] = []
     jump_points: dict[str, int] = {}
-
-    with open(argv[1], encoding="UTF-8") as program:
-        in_program = False
-        for line in program:
-            line = line[:-1]  # Removing newline character
-            if line == ".text":
-                in_program = True  # Finished (last blank line)
-                current_line = 0
-            elif not in_program:
-                continue
-            elif line.endswith(":"):
-                jump_points[line[:-1]] = current_line
-            else:
-                data.append(line)
-                current_line += 1
+    
+    in_program = False
+    for line in program:
+        line = line[:-1]  # Removing newline character
+        if line == ".text":
+            in_program = True  # Finished (last blank line)
+            current_line = 0
+        elif not in_program:
+            continue
+        elif line.endswith(":"):
+            jump_points[line[:-1]] = current_line
+        else:
+            data.append(line)
+            current_line += 1
 
     return data, jump_points
 
