@@ -1,41 +1,42 @@
+import filecmp
 from sys import argv
 
-def load_program(file) -> tuple:
-    data = list[str]
-    jump_points = dict[str:int]
+def load_program(file) -> tuple[list[str], dict[str, int]]:
+    data: list[str] = []
+    jump_points: dict[str:int] = {}
 
     with open(argv[1], encoding="UTF-8") as file:
-        CURRENT_LINE = 0
-        IN_PROGRAM = False
+        current_line = 0
+        in_program = False
         for line in file:
             line = line[:-1]  # Removing newline character
             if line == ".text":
-                IN_PROGRAM = True  # Finished (last blank line)
-            elif not IN_PROGRAM:
+                in_program = True  # Finished (last blank line)
+            elif not in_program:
                 continue
             elif line.endswith(":"):
-                jump_points[data[:-1]] = CURRENT_LINE
+                jump_points[data[:-1]] = current_line
             else:
                 data.append(line)
-                CURRENT_LINE += 1
-    
+                current_line += 1
+
     return data, jump_points
 
 
-def execute_program(data: list, jump_points: dict) -> None:
+def execute_program(data: list[str], jump_points: dict[str: int]) -> None:
     stack = [0]
-    variables = dict[str:int]
+    variables: dict[str:int] = {}
     regs = {"$sp": 0, "$v0":0}
 
-    def regs_to_num(num: str, regs) -> int:
+    def regs_to_num(num: str) -> int:
         if not num.lstrip("-").isdecimal():
             return int(regs[num])
-            return int(num)
+        return int(num)
 
 
-    CURRENT_LINE = 0
-    while CURRENT_LINE < len(data):
-        line = data[CURRENT_LINE].replace(",", "").split(" ")
+    current_line = 0
+    while current_line < len(data):
+        line = data[current_line].replace(",", "").split(" ")
         match line:
             case "li", reg, num:
                 regs[reg] = int(num)
@@ -58,17 +59,17 @@ def execute_program(data: list, jump_points: dict) -> None:
 
             case "sw", reg, var:
                 if "$sp" in var:
-                    OFFSET = int(var.split("(")[0]) / 4
+                    offset = int(var.split("(")[0]) / 4
                     stack[regs["$sp"] - 4] = regs[reg]
                 variables[var] = regs[reg]
 
             case "lw", reg, var:
                 if "$sp" in var:
                     if not var.startswith("("):
-                        OFFSET = int(var.split("(")[0]) / 4
+                        offset = int(var.split("(")[0]) / 4
                     else:
-                        OFFSET = 0
-                    regs[reg] = stack[regs["$sp"] + OFFSET]
+                        offset = 0
+                    regs[reg] = stack[regs["$sp"] + offset]
                 else:
                     regs[reg] = variables[var]
 
@@ -82,15 +83,15 @@ def execute_program(data: list, jump_points: dict) -> None:
                 num1 = regs_to_num(num1)
                 num2 = regs_to_num(num2)
                 if num1 > num2:
-                    CURRENT_LINE = jump_points[label]
+                    current_line = jump_points[label]
 
             case "j", label:
-                CURRENT_LINE = jump_points[label]
+                current_line = jump_points[label]
 
             case _:
                 raise ValueError("unkown instruction encountered: " + " ".join(line))
 
-        CURRENT_LINE += 1
+        current_line += 1
 
 if __name__ == "__main__":
     with open(argv[1], encoding="UTF-8") as file:
