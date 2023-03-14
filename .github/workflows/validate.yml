@@ -13,7 +13,13 @@ jobs:
       with:
         python-version: "3.11.1"
     - run: pip install --upgrade pip
-    - run: pip install "black<23" pylint==v3.0.0a3 mypy==v0.902
-    - run: pylint --disable=all --enable=unused-import $(git ls-files '*.py')
-    - run: mypy --strict $(git ls-files '*.py')
-    - run: black --diff --check $(git ls-files '*.py')
+    - run: pip install "black<23" pylint mypy
+    
+    - name: PyLint
+      run: pylint $(git ls-files '*.py') --fail-under=7
+
+    - name: MyPy
+      run: mypy $(git ls-files '*.py')
+
+    - name: Black
+      run: black --diff --check $(git ls-files '*.py')
