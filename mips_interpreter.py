@@ -1,5 +1,6 @@
 from sys import argv
 
+
 def load_program(program) -> tuple[list[str], dict[str, int]]:
     data: list[str] = []
     jump_points: dict[str, int] = {}
@@ -25,13 +26,12 @@ def load_program(program) -> tuple[list[str], dict[str, int]]:
 def execute_program(data: list[str], jump_points: dict[str, int]) -> None:
     stack = [0]
     variables: dict[str, int] = {}
-    regs = {"$sp": 0, "$v0":0}
+    regs = {"$sp": 0, "$v0": 0}
 
     def regs_to_num(num: str) -> int:
         if not num.lstrip("-").isdecimal():
             return int(regs[num])
         return int(num)
-
 
     current_line = 0
     while current_line < len(data):
@@ -85,6 +85,7 @@ def execute_program(data: list[str], jump_points: dict[str, int]) -> None:
                 raise ValueError("unkown instruction encountered: " + " ".join(line))
 
         current_line += 1
+
 
 if __name__ == "__main__":
     with open(argv[1], encoding="UTF-8") as file:

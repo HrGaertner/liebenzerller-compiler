@@ -5,7 +5,7 @@ import sys
 logger = logging.getLogger(__name__)
 
 
-class Environment():
+class Environment:
     def __init__(self):
         self.vars = set()
         self.while_count = 0
@@ -38,7 +38,9 @@ class Block(Code):
                 s.parseDecl(e)
 
     def generateBlockCode(self, env: Environment) -> str:
-        return "".join([s.generateCode(env) if type(s)!= Decl else "" for s in self.statements])
+        return "".join(
+            [s.generateCode(env) if type(s) != Decl else "" for s in self.statements]
+        )
 
     def __repr__(self) -> str:
         return ",".join([repr(s) for s in self.statements])
@@ -52,7 +54,8 @@ class Program(Block):
         return (
             ".data\n"
             + "\n".join([f"{v}: .word 0" for v in env.vars])
-            + "\n.text" + self.generateBlockCode(env)
+            + "\n.text"
+            + self.generateBlockCode(env)
         )
 
 
@@ -74,7 +77,10 @@ class Assign(Code):
 
     def generateCode(self, env: Environment) -> str:
         super().check_var_existence(env, self.varname)
-        local_code = "\nlw $t0 ($sp)\nadd $sp, $sp, 4\nsw $t0, " + self.varname
+        mips_exp = self.exp.generateCode(env)
+        local_code = (
+            mips_exp + "\nlw $t0 ($sp)\nadd $sp, $sp, 4\nsw $t0, " + self.varname
+        )
         return local_code
 
     def __repr__(self) -> str:
@@ -117,8 +123,14 @@ class If(Block):
     def generateCode(self, env: Environment) -> str:
         label = "if" + str(env.if_count)
         env.if_count += 1
-        start_code = "\n" + self.exp1.generateCode(env) + self.exp2.generateCode(env) + \
-		"\nlw $t0 ($sp)\nlw $t1 4($sp)\nadd $sp, $sp, 8\nbgt $t0, $t1, " + label + "\n"
+        start_code = (
+            "\n"
+            + self.exp1.generateCode(env)
+            + self.exp2.generateCode(env)
+            + "\nlw $t0 ($sp)\nlw $t1 4($sp)\nadd $sp, $sp, 8\nbgt $t0, $t1, "
+            + label
+            + "\n"
+        )
         end_code = "\n" + label + ":"
         return start_code + self.generateBlockCode(env) + end_code
 
@@ -135,8 +147,15 @@ class While(Block):
     def generateCode(self, env: Environment) -> str:
         label = "while" + str(env.while_count)
         env.while_count += 1
-        start_code = "\n" + label + "start: \n" + self.exp1.generateCode(env) + self.exp2.generateCode(env) + \
-			 "\nlw $t0 ($sp)\nlw $t1 4($sp)\nadd $sp, $sp, 8\nbgt $t0, $t1, " + label
+        mips_exp = self.exp1.generateCode(env) + self.exp2.generateCode(env)
+        start_code = (
+            "\n"
+            + label
+            + "start: \n"
+            + mips_exp
+            + "\nlw $t0 ($sp)\nlw $t1 4($sp)\nadd $sp, $sp, 8\nbgt $t0, $t1, "
+            + label
+        )
         end_code = "\nj " + label + "start\n" + label + "end:"
         return start_code + self.generateBlockCode(env) + end_code
 
@@ -152,9 +171,7 @@ class Sum(Code):
     def generateCode(self, env: Environment) -> str:
         mips_exp = self.exp1.generateCode(env)
         mips_exp += self.exp2.generateCode(env)
-        local_code = (
-            "\nlw $t0, ($sp)\nadd $sp, $sp, 4\nlw $t1, ($sp)\nadd $t2, $t1, $t0\nsw $t2, ($sp)"
-        )
+        local_code = "\nlw $t0, ($sp)\nadd $sp, $sp, 4\nlw $t1, ($sp)\nadd $t2, $t1, $t0\nsw $t2, ($sp)"
         return mips_exp + local_code
 
     def __repr__(self) -> str:
@@ -169,7 +186,9 @@ class Product(Code):
     def generateCode(self, env: Environment) -> str:
         mips_exp = self.exp1.generateCode(env)
         mips_exp += self.exp2.generateCode(env)
-        local_code = "lw $t0, ($sp)\nmul $sp 4\nlw $t1, (sp)\nadd $t2, $t1, $t0\nsw $t2, ($sp)"
+        local_code = (
+            "lw $t0, ($sp)\nmul $sp 4\nlw $t1, (sp)\nadd $t2, $t1, $t0\nsw $t2, ($sp)"
+        )
         return mips_exp + local_code
 
     def __repr__(self) -> str:
@@ -193,9 +212,9 @@ class Var(Code):
         self.varname = varname
 
     def generateCode(self, env: Environment) -> str:
-          super().check_var_existence(env, self.varname)
-          local_code = "lw $t0, " + self.varname + "\nadd $sp, $sp, -4\nsw $t0, ($sp)"
-          return local_code
+        super().check_var_existence(env, self.varname)
+        local_code = "lw $t0, " + self.varname + "\nadd $sp, $sp, -4\nsw $t0, ($sp)"
+        return local_code
 
     def __repr__(self) -> str:
         return self.varname
@@ -207,7 +226,7 @@ class Num(Code):
 
     def generateCode(self, env):
         local_code = "li $t0, " + str(self.number) + "\nadd $sp, $sp -4\nsw $t0 ($sp)"
-        return
+        return local_code
 
     def __repr__(self) -> str:
         return repr(self.number)
@@ -237,5 +256,5 @@ ast = Program(
 e = Environment()
 ast.parseDecl(e)
 
-with open(sys.argv[1], "w") as file:
+with open("test1.asm", "w") as file:  # sys.argv[1]
     file.write(ast.generateCode(e))
