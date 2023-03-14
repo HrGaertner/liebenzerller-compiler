@@ -6,16 +6,16 @@ def load_program(program) -> tuple[list[str], dict[str, int]]:
     jump_points: dict[str, int] = {}
 
     with open(argv[1], encoding="UTF-8") as program:
-        current_line = 0
         in_program = False
         for line in program:
             line = line[:-1]  # Removing newline character
             if line == ".text":
                 in_program = True  # Finished (last blank line)
+                current_line = 0
             elif not in_program:
                 continue
             elif line.endswith(":"):
-                jump_points[data[:-1]] = current_line
+                jump_points[line[:-1]] = current_line
             else:
                 data.append(line)
                 current_line += 1
@@ -61,7 +61,8 @@ def execute_program(data: list[str], jump_points: dict[str, int]) -> None:
             case "lw", reg, var:
                 if "$sp" in var:
                     if not var.startswith("("):
-                        offset = int(var.split("(")[0]) / 4
+                        # Always a multiple of 4
+                        offset = int(int(var.split("(")[0]) / 4)
                     else:
                         offset = 0
                     regs[reg] = stack[regs["$sp"] + offset]
@@ -72,7 +73,7 @@ def execute_program(data: list[str], jump_points: dict[str, int]) -> None:
                 if regs["$v0"] == 1:
                     print(regs["$a0"])
                 elif regs["$v0"] == 5:
-                    regs["$v0"] = input()
+                    regs["$v0"] = int(input())
 
             case "bgt", num1, num2, label:
                 if regs_to_num(num1) > regs_to_num(num2):
