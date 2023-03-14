@@ -1,14 +1,13 @@
-import filecmp
 from sys import argv
 
-def load_program(file) -> tuple[list[str], dict[str, int]]:
+def load_program(program) -> tuple[list[str], dict[str, int]]:
     data: list[str] = []
-    jump_points: dict[str:int] = {}
+    jump_points: dict[str, int] = {}
 
-    with open(argv[1], encoding="UTF-8") as file:
+    with open(argv[1], encoding="UTF-8") as program:
         current_line = 0
         in_program = False
-        for line in file:
+        for line in program:
             line = line[:-1]  # Removing newline character
             if line == ".text":
                 in_program = True  # Finished (last blank line)
@@ -23,9 +22,9 @@ def load_program(file) -> tuple[list[str], dict[str, int]]:
     return data, jump_points
 
 
-def execute_program(data: list[str], jump_points: dict[str: int]) -> None:
+def execute_program(data: list[str], jump_points: dict[str, int]) -> None:
     stack = [0]
-    variables: dict[str:int] = {}
+    variables: dict[str, int] = {}
     regs = {"$sp": 0, "$v0":0}
 
     def regs_to_num(num: str) -> int:
@@ -42,17 +41,13 @@ def execute_program(data: list[str], jump_points: dict[str: int]) -> None:
                 regs[reg] = int(num)
 
             case "mul", erg, num1, num2:
-                num1 = regs_to_num(num1)
-                num2 = regs_to_num(num2)
-                regs[erg] = regs[num1] * regs[num2]
+                regs[erg] = regs_to_num(num1) * regs_to_num(num2)
 
             case "add", erg, num1, num2:
-                num1 = regs_to_num(num1)
-                num2 = regs_to_num(num2)
+                regs[erg] = regs_to_num(num1) + regs_to_num(num2)
                 if erg == "$sp":
-                    if num1 + num2 >= len(stack):
+                    if regs[erg] >= len(stack):
                         stack.append(0)
-                regs[erg] = num1 + num2
 
             case "sw", reg, "($sp)":
                 stack[regs["$sp"]] = regs[reg]
@@ -80,9 +75,7 @@ def execute_program(data: list[str], jump_points: dict[str: int]) -> None:
                     regs["$v0"] = input()
 
             case "bgt", num1, num2, label:
-                num1 = regs_to_num(num1)
-                num2 = regs_to_num(num2)
-                if num1 > num2:
+                if regs_to_num(num1) > regs_to_num(num2):
                     current_line = jump_points[label]
 
             case "j", label:

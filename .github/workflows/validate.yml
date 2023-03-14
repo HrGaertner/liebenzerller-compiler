@@ -18,8 +18,8 @@ jobs:
     - name: PyLint
       run: pylint $(git ls-files '*.py') --fail-under=7
 
-    - name: MyPy
-      run: mypy $(git ls-files '*.py')
-
     - name: Black
       run: black --diff --check $(git ls-files '*.py')
+
+    - name: MyPy
+      run: mypy $(git ls-files '*.py')
