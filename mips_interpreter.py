@@ -90,5 +90,5 @@ def execute_program(data: list[str], jump_points: dict[str, int]) -> None:
 
 
 if __name__ == "__main__":
-    with open(argv[1], encoding="UTF-8") as file:
+    with open("test2.asm", encoding="UTF-8") as file:
         execute_program(*load_program(file))

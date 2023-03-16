@@ -1,4 +1,3 @@
-# TODO: Note variables in the LSB may not start with $ (check)
 import logging
 from sys import argv
 
@@ -129,8 +128,8 @@ class If(Block):
             + self.exp1.generateCode(env)
             + self.exp2.generateCode(env)
             + "\nlw $t0 ($sp)\nlw $t1 4($sp)\nadd $sp, $sp, 8\nbgt $t0, $t1, "
-            + label
-            + "\n"
+            + label 
+            + "end"
         )
         end_code = "\n" + label + ":"
         return start_code + self.generateBlockCode(env) + end_code
@@ -155,7 +154,8 @@ class While(Block):
             + "start: \n"
             + mips_exp
             + "\nlw $t0 ($sp)\nlw $t1 4($sp)\nadd $sp, $sp, 8\nbgt $t0, $t1, "
-            + label
+            + label 
+            + "end"
         )
         end_code = "\nj " + label + "start\n" + label + "end:"
         return start_code + self.generateBlockCode(env) + end_code
@@ -247,7 +247,7 @@ if __name__ == "__main__":
                 Num(0),
                 Var("x"),
                 [
-                    Assign("x", Sum(Var("x"), Negative(Num(1)))),
+                   Assign("x", Sum(Var("x"), Negative(Num(1)))),
                     Assign("z", Sum(Var("z"), Var("y"))),
                 ],
             ),
