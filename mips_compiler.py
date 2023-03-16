@@ -37,7 +37,7 @@ class Block(Code):
 
     def generate_block_code(self, env: Environment) -> str:
         return "".join(
-            [
+            [  # weird empty lines probably come from here BUG
                 s.generate_code(env) if not isinstance(s, Decl) else ""
                 for s in self.statements
             ]
@@ -153,7 +153,7 @@ class While(Block):
         start_code = (
             "\n"
             + label
-            + "start: \n"
+            + "start:\n"
             + mips_exp
             + "\nlw $t0 ($sp)\nlw $t1 4($sp)\nadd $sp, $sp, 8\nbgt $t0, $t1, "
             + label
