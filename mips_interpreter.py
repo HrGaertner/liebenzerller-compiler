@@ -4,7 +4,7 @@ from sys import argv
 def load_program(program) -> tuple[list[str], dict[str, int]]:
     data: list[str] = []
     jump_points: dict[str, int] = {}
-    
+
     in_program = False
     for line in program:
         line = line[:-1]  # Removing newline character
