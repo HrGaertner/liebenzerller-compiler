@@ -1,6 +1,6 @@
-# TODO: Note variables in the LSN may not start with $ (check)
+# TODO: Note variables in the LSB may not start with $ (check)
 import logging
-import sys
+from sys import argv
 
 logger = logging.getLogger(__name__)
 
@@ -56,6 +56,7 @@ class Program(Block):
             + "\n".join([f"{v}: .word 0" for v in env.vars])
             + "\n.text"
             + self.generateBlockCode(env)
+            + "\n"
         )
 
 
@@ -187,7 +188,7 @@ class Product(Code):
         mips_exp = self.exp1.generateCode(env)
         mips_exp += self.exp2.generateCode(env)
         local_code = (
-            "lw $t0, ($sp)\nmul $sp 4\nlw $t1, (sp)\nadd $t2, $t1, $t0\nsw $t2, ($sp)"
+            "\nlw $t0, ($sp)\nadd $sp, $sp, 4\nlw $t1, ($sp)\nmul $t2, $t1, $t0\nsw $t2, ($sp)"
         )
         return mips_exp + local_code
 
@@ -213,7 +214,7 @@ class Var(Code):
 
     def generateCode(self, env: Environment) -> str:
         super().check_var_existence(env, self.varname)
-        local_code = "lw $t0, " + self.varname + "\nadd $sp, $sp, -4\nsw $t0, ($sp)"
+        local_code = "\nlw $t0, " + self.varname + "\nadd $sp, $sp, -4\nsw $t0, ($sp)"
         return local_code
 
     def __repr__(self) -> str:
@@ -225,36 +226,38 @@ class Num(Code):
         self.number = number
 
     def generateCode(self, env):
-        local_code = "li $t0, " + str(self.number) + "\nadd $sp, $sp -4\nsw $t0 ($sp)"
+        local_code = "\nli $t0, " + str(self.number) + "\nadd $sp, $sp -4\nsw $t0 ($sp)"
         return local_code
 
     def __repr__(self) -> str:
         return repr(self.number)
 
 
-# Beispielprogramm
-ast = Program(
-    [
-        Decl("x"),
-        Decl("y"),
-        Decl("z"),
-        Assign("x", Sum(Product(Num(1), Num(2)), Num(3))),
-        Input("y"),
-        While(
-            Num(0),
-            Var("x"),
-            [
-                Assign("x", Sum(Var("x"), Negative(Num(1)))),
-                Assign("z", Sum(Var("z"), Var("y"))),
-            ],
-        ),
-        If(Var("z"), Num(1), [Print(Num(0))]),
-        If(Num(0), Var("z"), [Print(Var("z"))]),
-    ]
-)
 
-e = Environment()
-ast.parseDecl(e)
+if __name__ == "__main__":
+    # Beispielprogramm
+    ast = Program(
+        [
+            Decl("x"),
+            Decl("y"),
+            Decl("z"),
+            Assign("x", Sum(Product(Num(1), Num(2)), Num(3))),
+            Input("y"),
+            While(
+                Num(0),
+                Var("x"),
+                [
+                    Assign("x", Sum(Var("x"), Negative(Num(1)))),
+                    Assign("z", Sum(Var("z"), Var("y"))),
+                ],
+            ),
+            If(Var("z"), Num(1), [Print(Num(0))]),
+            If(Num(0), Var("z"), [Print(Var("z"))]),
+        ]
+    )
 
-with open("test1.asm", "w") as file:  # sys.argv[1]
-    file.write(ast.generateCode(e))
+    e = Environment()
+    ast.parseDecl(e)
+
+    with open(argv[1], "w") as file:
+        file.write(ast.generateCode(e))
