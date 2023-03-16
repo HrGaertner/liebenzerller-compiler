@@ -1,5 +1,5 @@
 import logging
-from sys import exit, argv
+from sys import argv
 
 logger = logging.getLogger(__name__)
 
@@ -29,15 +29,18 @@ class Block(Code):
         self.statements = statements
 
     def parse_decl(self, env: Environment):
-        for s in self.statements:
-            if isinstance(s, Decl):
-                env.vars.add(s.varname)
-            elif isinstance(s, Block):
-                s.parse_decl(e)
+        for statement in self.statements:
+            if isinstance(statement, Decl):
+                env.vars.add(statement.varname)
+            elif isinstance(statement, Block):
+                statement.parse_decl(e)
 
-    def generateBlockCode(self, env: Environment) -> str:
+    def generate_block_code(self, env: Environment) -> str:
         return "".join(
-            [s.generate_code(env) if type(s) != Decl else "" for s in self.statements]
+            [
+                s.generate_code(env) if not isinstance(s, Decl) else ""
+                for s in self.statements
+            ]
         )
 
     def __repr__(self) -> str:
@@ -53,7 +56,7 @@ class Program(Block):
             ".data\n"
             + "\n".join([f"{v}: .word 0" for v in env.vars])
             + "\n.text"
-            + self.generateBlockCode(env)
+            + self.generate_block_code(env)
             + "\n"
         )
 
@@ -131,7 +134,7 @@ class If(Block):
             + "end"
         )
         end_code = "\n" + label + ":"
-        return start_code + self.generateBlockCode(env) + end_code
+        return start_code + self.generate_block_code(env) + end_code
 
     def __repr__(self) -> str:
         return f"\nIf({self.exp1}, {self.exp2}) (" + super().__repr__() + "\n)"
@@ -157,7 +160,7 @@ class While(Block):
             + "end"
         )
         end_code = "\nj " + label + "start\n" + label + "end:"
-        return start_code + self.generateBlockCode(env) + end_code
+        return start_code + self.generate_block_code(env) + end_code
 
     def __repr__(self) -> str:
         return f"\nWhile({self.exp1}, {self.exp2}) (" + super().__repr__() + "\n)"
@@ -172,8 +175,8 @@ class Sum(Code):
         mips_exp = self.exp1.generate_code(env)
         mips_exp += self.exp2.generate_code(env)
         local_code = (
-            "\nlw $t0, ($sp)\nadd $sp, $sp, 4\nlw $t1,"
-            + " ($sp)\nadd $t2, $t1, $t0\nsw $t2, ($sp)"
+            "\nlw $t0, ($sp)\nadd $sp, $sp, 4\n"
+            + "lw $t1, ($sp)\nadd $t2, $t1, $t0\nsw $t2, ($sp)"
         )
         return mips_exp + local_code
 
@@ -189,7 +192,10 @@ class Product(Code):
     def generate_code(self, env: Environment) -> str:
         mips_exp = self.exp1.generate_code(env)
         mips_exp += self.exp2.generate_code(env)
-        local_code = "\nlw $t0, ($sp)\nadd $sp, $sp, 4\nlw $t1, ($sp)\nmul $t2, $t1, $t0\nsw $t2, ($sp)"
+        local_code = (
+            "\nlw $t0, ($sp)\nadd $sp, $sp, 4\n"
+            + "lw $t1, ($sp)\nmul $t2, $t1, $t0\nsw $t2, ($sp)"
+        )
         return mips_exp + local_code
 
     def __repr__(self) -> str:
