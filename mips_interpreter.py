@@ -44,19 +44,19 @@ def execute_program(data: list[str], jump_points: dict[str, int]) -> None:
 
             case "add", erg, num1, num2:
                 if erg == "$sp":
-                    if abs((regs_to_num(num1) - regs_to_num(num2))/4)>= len(stack):
+                    if abs((regs_to_num(num1) - regs_to_num(num2)) / 4) >= len(stack):
                         stack.append(0)
                     regs[erg] = regs_to_num(num1) - regs_to_num(num2)
                 else:
                     regs[erg] = regs_to_num(num1) + regs_to_num(num2)
 
             case "sw", reg, "($sp)":
-                stack[int(regs["$sp"]/4)] = regs[reg]
+                stack[int(regs["$sp"] / 4)] = regs[reg]
 
             case "sw", reg, var:
                 if "$sp" in var:
                     offset = int(var.split("(")[0])
-                    stack[int((regs["$sp"] - offset)/4)] = regs[reg]
+                    stack[int((regs["$sp"] - offset) / 4)] = regs[reg]
                 variables[var] = regs[reg]
 
             case "lw", reg, var:
@@ -66,7 +66,7 @@ def execute_program(data: list[str], jump_points: dict[str, int]) -> None:
                         offset = int(int(var.split("(")[0]) / 4)
                     else:
                         offset = 0
-                    regs[reg] = stack[int((regs["$sp"] + offset)/4)]
+                    regs[reg] = stack[int((regs["$sp"] + offset) / 4)]
                 else:
                     regs[reg] = variables[var]
 
@@ -90,5 +90,5 @@ def execute_program(data: list[str], jump_points: dict[str, int]) -> None:
 
 
 if __name__ == "__main__":
-    with open("test2.asm", encoding="UTF-8") as file:
+    with open(argv[1], encoding="UTF-8") as file:
         execute_program(*load_program(file))
