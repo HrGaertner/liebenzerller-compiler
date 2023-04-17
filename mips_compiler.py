@@ -132,7 +132,7 @@ class If(Block):
             + label
             + "end"
         )
-        end_code = "\n" + label + ":"
+        end_code = "\n" + label + "end:"
         return start_code + self.generate_block_code(env) + end_code
 
     def __repr__(self) -> str:
@@ -150,8 +150,9 @@ class While(Block):
         env.while_count += 1
         mips_exp = self.exp1.generate_code(env) + self.exp2.generate_code(env)
         start_code = (
-            label
-            + "start:\n"
+            "\n"
+            + label
+            + "start:"
             + mips_exp
             + "\nlw $t0 ($sp)\nlw $t1 4($sp)\nadd $sp, $sp, 8\nbgt $t0, $t1, "
             + label
