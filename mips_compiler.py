@@ -126,8 +126,7 @@ class If(Block):
         label = "if" + str(env.if_count)
         env.if_count += 1
         start_code = (
-            "\n"
-            + self.exp1.generate_code(env)
+            self.exp1.generate_code(env)
             + self.exp2.generate_code(env)
             + "\nlw $t0 ($sp)\nlw $t1 4($sp)\nadd $sp, $sp, 8\nbgt $t0, $t1, "
             + label
@@ -151,8 +150,7 @@ class While(Block):
         env.while_count += 1
         mips_exp = self.exp1.generate_code(env) + self.exp2.generate_code(env)
         start_code = (
-            "\n"
-            + label
+            label
             + "start:\n"
             + mips_exp
             + "\nlw $t0 ($sp)\nlw $t1 4($sp)\nadd $sp, $sp, 8\nbgt $t0, $t1, "
@@ -246,6 +244,7 @@ if __name__ == "__main__":
             Decl("x"),
             Decl("y"),
             Decl("z"),
+            Assign("z", Num(0)),  # Initalize value (BUG we have to think this through)
             Assign("x", Sum(Product(Num(1), Num(2)), Num(3))),
             Input("y"),
             While(
