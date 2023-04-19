@@ -1,7 +1,8 @@
 from sys import argv
+from typing import Iterable
 
 
-def load_program(program) -> tuple[list[str], dict[str, int]]:
+def load_program(program: Iterable[str]) -> tuple[list[str], dict[str, int]]:
     data: list[str] = []
     jump_points: dict[str, int] = {}
 

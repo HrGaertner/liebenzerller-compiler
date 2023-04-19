@@ -33,7 +33,7 @@ class Block(Code):
             if isinstance(statement, Decl):
                 env.vars.add(statement.varname)
             elif isinstance(statement, Block):
-                statement.parse_decl(e)
+                statement.parse_decl(env)
 
     def generate_block_code(self, env: Environment) -> str:
         return "".join(
